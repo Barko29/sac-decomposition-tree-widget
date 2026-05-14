@@ -6,19 +6,30 @@
     siblingGap: 16,
     barColor: "#2563eb",
     negativeBarColor: "#dc2626",
+    othersBarColor: "#64748b",
     showValues: true,
     initialExpandLevel: 1,
     maxVisibleNodes: 500,
-    rootLabel: "Total"
+    rootLabel: "Total",
+    topN: 10,
+    enableOthers: true,
+    othersLabel: "Others",
+    sortDescending: true
   };
 
   const SAMPLE_ROWS = [
     { path: ["EMEA", "Germany"], value: 240 },
     { path: ["EMEA", "Poland"], value: 130 },
     { path: ["EMEA", "France"], value: 240 },
+    { path: ["EMEA", "Italy"], value: 80 },
+    { path: ["EMEA", "Spain"], value: 75 },
+    { path: ["EMEA", "Netherlands"], value: 60 },
     { path: ["North America", "United States"], value: 360 },
     { path: ["North America", "Canada"], value: 70 },
-    { path: ["APJ"], value: 200 }
+    { path: ["North America", "Mexico"], value: 55 },
+    { path: ["APJ", "Japan"], value: 120 },
+    { path: ["APJ", "Australia"], value: 80 },
+    { path: ["APJ", "Singapore"], value: 45 }
   ];
 
   function toNumber(value) {
@@ -117,26 +128,80 @@
       level,
       value: 0,
       children: [],
-      _childrenById: new Map()
+      _childrenById: new Map(),
+      isOthers: false,
+      hiddenChildrenCount: 0
     };
   }
 
-  function finalizeNode(node) {
-    node.children = Array.from(node._childrenById.values())
-      .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
-      .map(finalizeNode);
+  function sortChildren(children, sortDescending) {
+    return children.sort((a, b) => {
+      const diff = Math.abs(b.value) - Math.abs(a.value);
+      return sortDescending ? diff : -diff;
+    });
+  }
+
+  function createOthersNode(hiddenChildren, parentNode, settings) {
+    const othersNode = createNode(
+      `${parentNode.id}|__others__`,
+      settings.othersLabel || "Others",
+      parentNode.level + 1
+    );
+
+    othersNode.isOthers = true;
+    othersNode.hiddenChildrenCount = hiddenChildren.length;
+    othersNode.value = hiddenChildren.reduce(
+      (sum, child) => sum + toNumber(child.value),
+      0
+    );
+
+    othersNode.children = [];
+    return othersNode;
+  }
+
+  function finalizeNode(node, settings) {
+    let children = Array.from(node._childrenById.values())
+      .map(child => finalizeNode(child, settings));
+
+    children = sortChildren(children, settings.sortDescending);
+
+    const topN = Math.max(0, toNumber(settings.topN));
+
+    if (
+      settings.enableOthers &&
+      topN > 0 &&
+      children.length > topN
+    ) {
+      const visibleChildren = children.slice(0, topN);
+      const hiddenChildren = children.slice(topN);
+      const othersNode = createOthersNode(hiddenChildren, node, settings);
+
+      children = [...visibleChildren, othersNode];
+    }
+
+    node.children = children;
 
     delete node._childrenById;
     return node;
   }
 
-  function buildTreeFromPathRows(pathRows, rootLabel) {
-    const root = createNode("__root__", rootLabel || "Total", 0);
+  function buildTreeFromPathRows(pathRows, settings) {
+    const root = createNode(
+      "__root__",
+      settings.rootLabel || "Total",
+      0
+    );
 
     pathRows.forEach(row => {
       const value = toNumber(row.value);
       const path = Array.isArray(row.path)
-        ? row.path.filter(part => part !== undefined && part !== null && String(part) !== "")
+        ? row.path.filter(part => {
+            return (
+              part !== undefined &&
+              part !== null &&
+              String(part) !== ""
+            );
+          })
         : [];
 
       if (!path.length) {
@@ -151,6 +216,7 @@
       path.forEach((part, index) => {
         const label = String(part);
         const safePart = label || `Level ${index + 1}`;
+
         cumulativeId += `|${safePart}`;
 
         if (!current._childrenById.has(cumulativeId)) {
@@ -165,15 +231,21 @@
       });
     });
 
-    return [finalizeNode(root)];
+    return [finalizeNode(root, settings)];
   }
 
-  function buildTreeFromParentRows(rows, rootLabel) {
+  function buildTreeFromParentRows(rows, settings) {
     const byId = new Map();
-    const root = createNode("__root__", rootLabel || "Total", 0);
+
+    const root = createNode(
+      "__root__",
+      settings.rootLabel || "Total",
+      0
+    );
 
     rows.forEach((row, index) => {
       const id = String(row.id ?? `node-${index}`);
+
       const parentId =
         row.parentId === undefined ||
         row.parentId === null ||
@@ -187,7 +259,9 @@
         label: String(row.label ?? id),
         value: toNumber(row.value ?? row.actual ?? row.measure),
         children: [],
-        _childrenById: new Map()
+        _childrenById: new Map(),
+        isOthers: false,
+        hiddenChildrenCount: 0
       });
     });
 
@@ -212,11 +286,12 @@
     }
 
     rollup(root);
-    return [finalizeNode(root)];
+
+    return [finalizeNode(root, settings)];
   }
 
-  function buildSampleTree(rootLabel) {
-    return buildTreeFromPathRows(SAMPLE_ROWS, rootLabel);
+  function buildSampleTree(settings) {
+    return buildTreeFromPathRows(SAMPLE_ROWS, settings);
   }
 
   function extractPathRowsFromSacBinding(binding) {
@@ -304,10 +379,14 @@
         ...DEFAULT_SETTINGS
       };
 
-      this._tree = buildSampleTree(this._settings.rootLabel);
+      this._lastPathRows = [];
+      this._tree = buildSampleTree(this._settings);
       this._expanded = new Set();
 
-      this.setExpandedLevel(this._settings.initialExpandLevel, false);
+      this.setExpandedLevel(
+        this._settings.initialExpandLevel,
+        false
+      );
     }
 
     connectedCallback() {
@@ -320,6 +399,8 @@
         ...this._settings,
         ...changedProperties
       };
+
+      this.rebuildTreeFromLastData();
     }
 
     onCustomWidgetAfterUpdate() {
@@ -335,6 +416,22 @@
       this.shadowRoot.innerHTML = "";
     }
 
+    rebuildTreeFromLastData() {
+      if (this._lastPathRows && this._lastPathRows.length) {
+        this._tree = buildTreeFromPathRows(
+          this._lastPathRows,
+          this._settings
+        );
+      } else {
+        this._tree = buildSampleTree(this._settings);
+      }
+
+      this.setExpandedLevel(
+        this._settings.initialExpandLevel,
+        false
+      );
+    }
+
     tryRefreshFromBinding() {
       const binding = this.mainBinding;
 
@@ -348,9 +445,11 @@
         return;
       }
 
+      this._lastPathRows = pathRows;
+
       this._tree = buildTreeFromPathRows(
         pathRows,
-        this._settings.rootLabel
+        this._settings
       );
 
       this.setExpandedLevel(
@@ -397,18 +496,28 @@
     }
 
     setData(rows) {
-      if (Array.isArray(rows) && rows.length && Array.isArray(rows[0].path)) {
+      if (
+        Array.isArray(rows) &&
+        rows.length &&
+        Array.isArray(rows[0].path)
+      ) {
+        this._lastPathRows = rows;
+
         this._tree = buildTreeFromPathRows(
           rows,
-          this._settings.rootLabel
+          this._settings
         );
       } else if (Array.isArray(rows)) {
+        this._lastPathRows = [];
+
         this._tree = buildTreeFromParentRows(
           rows,
-          this._settings.rootLabel
+          this._settings
         );
       } else {
-        this._tree = buildSampleTree(this._settings.rootLabel);
+        this._lastPathRows = [];
+
+        this._tree = buildSampleTree(this._settings);
       }
 
       this.setExpandedLevel(
@@ -441,6 +550,34 @@
       this.render();
     }
 
+    getNodeColor(node) {
+      if (node.isOthers) {
+        return this._settings.othersBarColor;
+      }
+
+      if (node.value < 0) {
+        return this._settings.negativeBarColor;
+      }
+
+      return this._settings.barColor;
+    }
+
+    getNodeTitle(node) {
+      if (node.isOthers && node.hiddenChildrenCount) {
+        return `${node.label} (${node.hiddenChildrenCount} hidden members) | Value: ${formatNumber(node.value)}`;
+      }
+
+      return `${node.label} | Value: ${formatNumber(node.value)}`;
+    }
+
+    getNodeDisplayLabel(node) {
+      if (node.isOthers && node.hiddenChildrenCount) {
+        return `${node.label} (${node.hiddenChildrenCount})`;
+      }
+
+      return node.label;
+    }
+
     render() {
       if (!this.shadowRoot) {
         return;
@@ -454,7 +591,7 @@
           this.styles() +
           `<div class="state">
             Too many nodes to display (${visible.length}).
-            Collapse levels or apply filters.
+            Collapse levels, reduce Top-N, or apply filters.
           </div>`;
 
         return;
@@ -493,7 +630,12 @@
       );
 
       const connectors = positioned
-        .filter(n => n.parentVisibleIndex !== null && byIndex.has(n.parentVisibleIndex))
+        .filter(n => {
+          return (
+            n.parentVisibleIndex !== null &&
+            byIndex.has(n.parentVisibleIndex)
+          );
+        })
         .map(n => {
           const p = byIndex.get(n.parentVisibleIndex);
 
@@ -523,20 +665,25 @@
             Math.abs(node.value) / maxValue * barWidthMax
           );
 
-          const hasChildren = node.children && node.children.length > 0;
+          const hasChildren =
+            node.children &&
+            node.children.length > 0;
+
           const expanded = this._expanded.has(node.id);
-          const fill = node.value < 0 ? s.negativeBarColor : s.barColor;
+          const fill = this.getNodeColor(node);
+          const displayLabel = this.getNodeDisplayLabel(node);
+          const nodeTitle = this.getNodeTitle(node);
 
           return `
             <g
-              class="dt-node"
+              class="dt-node ${node.isOthers ? "others-node" : ""}"
               data-node-id="${escapeXml(node.id)}"
               tabindex="0"
               role="button"
-              aria-label="${escapeXml(node.label)}"
+              aria-label="${escapeXml(displayLabel)}"
             >
               <title>
-                ${escapeXml(node.label)} | Value: ${formatNumber(node.value)}
+                ${escapeXml(nodeTitle)}
               </title>
 
               <rect
@@ -571,7 +718,7 @@
                 x="${node.x + (hasChildren ? 30 : 14)}"
                 y="${node.y + 19}"
               >
-                ${escapeXml(node.label)}
+                ${escapeXml(displayLabel)}
               </text>
 
               <rect
@@ -699,10 +846,18 @@
             filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.08));
           }
 
+          .others-node .node-card {
+            stroke-dasharray: 4 3;
+          }
+
           .node-label {
             font-size: 12px;
             font-weight: 600;
             fill: #0f172a;
+          }
+
+          .others-node .node-label {
+            fill: #475569;
           }
 
           .value-label {
