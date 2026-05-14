@@ -1,134 +1,6 @@
 (function () {
   const DEFAULT_SETTINGS = {
-    nodeWidth: 250 "object") {    nodeWidth: 250,
-      return String(cell);
-    }
-
-    return String(
-      cell.id ??
-      cell.key ??
-      cell.raw ??
-      cell.rawValue ??
-      cell.label ??
-      cell.description ??
-      ""
-    );
-  }
-
-  function readMeasureValue(cell) {
-    if (cell === undefined || cell === null) {
-      return 0;
-    }
-
-    if (typeof cell !== "object") {
-      return toNumber(cell);
-    }
-
-    return toNumber(
-      cell.raw ??
-      cell.rawValue ??
-      cell.value ??
-      cell.formatted ??
-      0
-    );
-  }
-
-  function escapeXml(value) {
-    return String(value ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&apos;");
-  }
-
-  function formatNumber(value) {
-    return new Intl.NumberFormat(undefined, {
-      maximumFractionDigits: 1
-    }).format(value || 0);
-  }
-
-  function createNode(id, label, level) {
-    return {
-      id,
-      label,
-      level,
-      value: 0,
-      children: [],
-      _childrenById: new Map(),
-      isOthers: false,
-      hiddenChildrenCount: 0
-    };
-  }
-
-  function sortChildren(children, sortDescending) {
-    return children.sort((a, b) => {
-      const diff = Math.abs(b.value) - Math.abs(a.value);
-      return sortDescending ? diff : -diff;
-    });
-  }
-
-  function createOthersNode(hiddenChildren, parentNode, settings) {
-    const othersNode = createNode(
-      `${parentNode.id}|__others__`,
-      settings.othersLabel || "Others",
-      parentNode.level + 1
-    );
-
-    othersNode.isOthers = true;
-    othersNode.hiddenChildrenCount = hiddenChildren.length;
-    othersNode.value = hiddenChildren.reduce(
-      (sum, child) => sum + toNumber(child.value),
-      0
-    );
-
-    othersNode.children = [];
-    return othersNode;
-  }
-
-  function finalizeNode(node, settings) {
-    let children = Array.from(node._childrenById.values())
-      .map(child => finalizeNode(child, settings));
-
-    children = sortChildren(children, settings.sortDescending);
-
-    const topN = Math.max(0, toNumber(settings.topN));
-
-    if (
-      settings.enableOthers &&
-      topN > 0 &&
-      children.length > topN
-    ) {
-      const visibleChildren = children.slice(0, topN);
-      const hiddenChildren = children.slice(topN);
-      const othersNode = createOthersNode(hiddenChildren, node, settings);
-
-      children = [...visibleChildren, othersNode];
-    }
-
-    node.children = children;
-
-    delete node._childrenById;
-    return node;
-  }
-
-  function buildTreeFromPathRows(pathRows, settings) {
-    const root = createNode(
-      "__root__",
-      settings.rootLabel || "Total",
-      0
-    );
-
-    pathRows.forEach(row => {
-      const value = toNumber(row.value);
-
-      const path = Array.isArray(row.path)
-        ? row.path.filter(part => {
-            return (
-              part !== undefined &&
-              part !== null &&
-              String(part) !== ""
-            );
+    node            );    nodeWidth: 250,
           })
         : [];
 
@@ -164,12 +36,7 @@
 
   function buildTreeFromParentRows(rows, settings) {
     const byId = new Map();
-
-    const root = createNode(
-      "__root__",
-      settings.rootLabel || "Total",
-      0
-    );
+    const root = createNode("__root__", settings.rootLabel || "Total", 0);
 
     rows.forEach((row, index) => {
       const id = String(row.id ?? `node-${index}`);
@@ -231,14 +98,12 @@
     const feeds = metadata.feeds || {};
 
     const dimensionAliases =
-      feeds.dimensions &&
-      Array.isArray(feeds.dimensions.values)
+      feeds.dimensions && Array.isArray(feeds.dimensions.values)
         ? feeds.dimensions.values
         : [];
 
     const measureAliases =
-      feeds.measures &&
-      Array.isArray(feeds.measures.values)
+      feeds.measures && Array.isArray(feeds.measures.values)
         ? feeds.measures.values
         : [];
 
@@ -311,10 +176,7 @@
       this._tree = buildSampleTree(this._settings);
       this._expanded = new Set();
 
-      this.setExpandedLevel(
-        this._settings.initialExpandLevel,
-        false
-      );
+      this.setExpandedLevel(this._settings.initialExpandLevel, false);
     }
 
     connectedCallback() {
@@ -346,18 +208,12 @@
 
     rebuildTreeFromLastData() {
       if (this._lastPathRows && this._lastPathRows.length) {
-        this._tree = buildTreeFromPathRows(
-          this._lastPathRows,
-          this._settings
-        );
+        this._tree = buildTreeFromPathRows(this._lastPathRows, this._settings);
       } else {
         this._tree = buildSampleTree(this._settings);
       }
 
-      this.setExpandedLevel(
-        this._settings.initialExpandLevel,
-        false
-      );
+      this.setExpandedLevel(this._settings.initialExpandLevel, false);
     }
 
     tryRefreshFromBinding() {
@@ -374,16 +230,9 @@
       }
 
       this._lastPathRows = pathRows;
+      this._tree = buildTreeFromPathRows(pathRows, this._settings);
 
-      this._tree = buildTreeFromPathRows(
-        pathRows,
-        this._settings
-      );
-
-      this.setExpandedLevel(
-        this._settings.initialExpandLevel,
-        false
-      );
+      this.setExpandedLevel(this._settings.initialExpandLevel, false);
     }
 
     expandAll() {
@@ -424,35 +273,18 @@
     }
 
     setData(rows) {
-      if (
-        Array.isArray(rows) &&
-        rows.length &&
-        Array.isArray(rows[0].path)
-      ) {
+      if (Array.isArray(rows) && rows.length && Array.isArray(rows[0].path)) {
         this._lastPathRows = rows;
-
-        this._tree = buildTreeFromPathRows(
-          rows,
-          this._settings
-        );
+        this._tree = buildTreeFromPathRows(rows, this._settings);
       } else if (Array.isArray(rows)) {
         this._lastPathRows = [];
-
-        this._tree = buildTreeFromParentRows(
-          rows,
-          this._settings
-        );
+        this._tree = buildTreeFromParentRows(rows, this._settings);
       } else {
         this._lastPathRows = [];
-
         this._tree = buildSampleTree(this._settings);
       }
 
-      this.setExpandedLevel(
-        this._settings.initialExpandLevel,
-        false
-      );
-
+      this.setExpandedLevel(this._settings.initialExpandLevel, false);
       this.render();
     }
 
@@ -533,10 +365,7 @@
         height: s.nodeHeight
       }));
 
-      const maxLevel = Math.max(
-        0,
-        ...positioned.map(n => n.level)
-      );
+      const maxLevel = Math.max(0, ...positioned.map(n => n.level));
 
       const width = Math.max(
         700,
@@ -548,20 +377,14 @@
         40 + positioned.length * (s.nodeHeight + s.siblingGap)
       );
 
-      const maxValue = Math.max(
-        1,
-        ...positioned.map(n => Math.abs(n.value))
-      );
+      const maxValue = Math.max(1, ...positioned.map(n => Math.abs(n.value)));
 
-      const byIndex = new Map(
-        positioned.map(n => [n.visibleIndex, n])
-      );
+      const byIndex = new Map(positioned.map(n => [n.visibleIndex, n]));
 
       const connectors = positioned
         .filter(n => {
           return (
-            n.parentVisibleIndex !== null &&
-            byIndex.has(n.parentVisibleIndex)
+            n.parentVisibleIndex !== null && byIndex.has(n.parentVisibleIndex)
           );
         })
         .map(n => {
@@ -590,13 +413,10 @@
 
           const barWidth = Math.max(
             0,
-            Math.abs(node.value) / maxValue * barWidthMax
+            (Math.abs(node.value) / maxValue) * barWidthMax
           );
 
-          const hasChildren =
-            node.children &&
-            node.children.length > 0;
-
+          const hasChildren = node.children && node.children.length > 0;
           const expanded = this._expanded.has(node.id);
           const fill = this.getNodeColor(node);
           const displayLabel = this.getNodeDisplayLabel(node);
@@ -611,9 +431,7 @@
               role="button"
               aria-label="${escapeXml(displayLabel)}"
             >
-              <title>
-                ${escapeXml(nodeTitle)}
-              </title>
+              <title>${escapeXml(nodeTitle)}</title>
 
               <rect
                 class="node-card"
@@ -646,9 +464,7 @@
                 class="node-label"
                 x="${node.x + (hasChildren ? 30 : 14)}"
                 y="${node.y + 19}"
-              >
-                ${escapeXml(displayLabel)}
-              </text>
+              >${escapeXml(displayLabel)}</text>
 
               <rect
                 class="bar-bg"
@@ -676,9 +492,7 @@
                       class="value-label"
                       x="${barX}"
                       y="${node.y + 50}"
-                    >
-                      ${formatNumber(node.value)}
-                    </text>
+                    >${formatNumber(node.value)}</text>
                   `
                   : ""
               }
@@ -740,37 +554,12 @@
 
             this.dispatchEvent(
               new CustomEvent("onNodeClick", {
-                detail: {
-                  nodeId
-                }
+                detail: { nodeId }
               })
             );
           }
         });
       }
-
-      this.shadowRoot
-        .querySelectorAll(".dt-node")
-        .forEach(el => {
-          el.addEventListener("keydown", event => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              event.stopPropagation();
-
-              const nodeId = el.getAttribute("data-node-id");
-              const hasChildren =
-                el.getAttribute("data-has-children") === "true";
-
-              /*
-                Keyboard expand/collapse is kept for accessibility.
-                If you want mouse-only + / - behavior, remove this block.
-              */
-              if (hasChildren && nodeId) {
-                this.toggleNode(nodeId);
-              }
-            }
-          });
-        });
     }
 
     styles() {
@@ -881,11 +670,13 @@
     }
   }
 
-  customElements.define(
-    "com-company-decomposition-tree",
-    DecompositionTreeWidget
-  );
+  const MAIN_TAG = "com-company-decomposition-tree";
+
+  if (!customElements.get(MAIN_TAG)) {
+    customElements.define(MAIN_TAG, DecompositionTreeWidget);
+  }
 })();
+
     nodeHeight: 58,
     levelGap: 90,
     siblingGap: 16,
@@ -945,11 +736,11 @@
 
     return String(
       cell.label ??
-      cell.description ??
-      cell.formatted ??
-      cell.value ??
-      cell.id ??
-      ""
+        cell.description ??
+        cell.formatted ??
+        cell.value ??
+        cell.id ??
+        ""
     );
   }
 
@@ -958,3 +749,124 @@
       return "";
     }
 
+    if (typeof cell !== "object") {
+      return String(cell);
+    }
+
+    return String(
+      cell.id ??
+        cell.key ??
+        cell.raw ??
+        cell.rawValue ??
+        cell.label ??
+        cell.description ??
+        ""
+    );
+  }
+
+  function readMeasureValue(cell) {
+    if (cell === undefined || cell === null) {
+      return 0;
+    }
+
+    if (typeof cell !== "object") {
+      return toNumber(cell);
+    }
+
+    return toNumber(
+      cell.raw ??
+        cell.rawValue ??
+        cell.value ??
+        cell.formatted ??
+        0
+    );
+  }
+
+  function escapeXml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&apos;");
+  }
+
+  function formatNumber(value) {
+    return new Intl.NumberFormat(undefined, {
+      maximumFractionDigits: 1
+    }).format(value || 0);
+  }
+
+  function createNode(id, label, level) {
+    return {
+      id,
+      label,
+      level,
+      value: 0,
+      children: [],
+      _childrenById: new Map(),
+      isOthers: false,
+      hiddenChildrenCount: 0
+    };
+  }
+
+  function sortChildren(children, sortDescending) {
+    return children.sort((a, b) => {
+      const diff = Math.abs(b.value) - Math.abs(a.value);
+      return sortDescending ? diff : -diff;
+    });
+  }
+
+  function createOthersNode(hiddenChildren, parentNode, settings) {
+    const othersNode = createNode(
+      `${parentNode.id}|__others__`,
+      settings.othersLabel || "Others",
+      parentNode.level + 1
+    );
+
+    othersNode.isOthers = true;
+    othersNode.hiddenChildrenCount = hiddenChildren.length;
+    othersNode.value = hiddenChildren.reduce(
+      (sum, child) => sum + toNumber(child.value),
+      0
+    );
+
+    othersNode.children = [];
+    return othersNode;
+  }
+
+  function finalizeNode(node, settings) {
+    let children = Array.from(node._childrenById.values()).map(child =>
+      finalizeNode(child, settings)
+    );
+
+    children = sortChildren(children, settings.sortDescending);
+
+    const topN = Math.max(0, toNumber(settings.topN));
+
+    if (settings.enableOthers && topN > 0 && children.length > topN) {
+      const visibleChildren = children.slice(0, topN);
+      const hiddenChildren = children.slice(topN);
+      const othersNode = createOthersNode(hiddenChildren, node, settings);
+
+      children = [...visibleChildren, othersNode];
+    }
+
+    node.children = children;
+
+    delete node._childrenById;
+    return node;
+  }
+
+  function buildTreeFromPathRows(pathRows, settings) {
+    const root = createNode("__root__", settings.rootLabel || "Total", 0);
+
+    pathRows.forEach(row => {
+      const value = toNumber(row.value);
+
+      const path = Array.isArray(row.path)
+        ? row.path.filter(part => {
+            return (
+              part !== undefined &&
+              part !== null &&
+              String(part) !== ""
