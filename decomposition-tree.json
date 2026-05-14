@@ -9,17 +9,23 @@
     {
       "kind": "main",
       "tag": "com-company-decomposition-tree",
-      "url": "https://barko29.github.io/sac-decomposition-tree-widget/decomposition-tree.js"
+      "url": "https://barko29.github.io/sac-decomposition-tree-widget/decomposition-tree.js",
+      "integrity": "",
+      "ignoreIntegrity": true
     },
     {
       "kind": "builder",
       "tag": "com-company-decomposition-tree-builder",
-      "url": "https://barko29.github.io/sac-decomposition-tree-widget/decomposition-tree-builder.js"
+      "url": "https://barko29.github.io/sac-decomposition-tree-widget/decomposition-tree-builder.js",
+      "integrity": "",
+      "ignoreIntegrity": true
     },
     {
       "kind": "styling",
       "tag": "com-company-decomposition-tree-styling",
-      "url": "https://barko29.github.io/sac-decomposition-tree-widget/decomposition-tree-styling.js"
+      "url": "https://barko29.github.io/sac-decomposition-tree-widget/decomposition-tree-styling.js",
+      "integrity": "",
+      "ignoreIntegrity": true
     }
   ],
   "properties": {
