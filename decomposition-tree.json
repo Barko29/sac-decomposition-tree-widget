@@ -1,8 +1,8 @@
 {
   "id": "com.company.sac.decompositiontree",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "name": "Decomposition Tree",
-  "description": "Expandable left-to-right decomposition tree with actual bars, plan markers and threshold coloring.",
+  "description": "Expandable left-to-right decomposition tree with a synthetic Total root, SAC dimensions as hierarchy levels, and one measure as bar value.",
   "newInstancePrefix": "DecompositionTree",
   "icon": "https://barko29.github.io/sac-decomposition-tree-widget/icon.svg",
   "webcomponents": [
@@ -14,13 +14,6 @@
       "ignoreIntegrity": true
     },
     {
-      "kind": "builder",
-      "tag": "com-company-decomposition-tree-builder",
-      "url": "https://barko29.github.io/sac-decomposition-tree-widget/decomposition-tree-builder.js",
-      "integrity": "",
-      "ignoreIntegrity": true
-    },
-    {
       "kind": "styling",
       "tag": "com-company-decomposition-tree-styling",
       "url": "https://barko29.github.io/sac-decomposition-tree-widget/decomposition-tree-styling.js",
@@ -28,67 +21,43 @@
       "ignoreIntegrity": true
     }
   ],
-  "properties": {
-    "nodeWidth": {
-      "type": "integer",
-      "default": 250
-    },
-    "nodeHeight": {
-      "type": "integer",
-      "default": 58
-    },
-    "levelGap": {
-      "type": "integer",
-      "default": 90
-    },
-    "siblingGap": {
-      "type": "integer",
-      "default": 16
-    },
-    "thresholdAmber": {
-      "type": "number",
-      "default": 0.9
-    },
-    "thresholdGreen": {
-      "type": "number",
-      "default": 1.0
-    },
-    "showValues": {
-      "type": "boolean",
-      "default": true
-    },
-    "initialExpandLevel": {
-      "type": "integer",
-      "default": 1
-    },
-    "maxVisibleNodes": {
-      "type": "integer",
-      "default": 500
+  "dataBindings": {
+    "mainBinding": {
+      "feeds": [
+        {
+          "id": "dimensions",
+          "description": "Dimensions / Hierarchy",
+          "type": "dimension"
+        },
+        {
+          "id": "measures",
+          "description": "Measure",
+          "type": "mainStructureMember"
+        }
+      ]
     }
+  },
+  "properties": {
+    "nodeWidth": { "type": "integer", "default": 250 },
+    "nodeHeight": { "type": "integer", "default": 58 },
+    "levelGap": { "type": "integer", "default": 90 },
+    "siblingGap": { "type": "integer", "default": 16 },
+    "barColor": { "type": "string", "default": "#2563eb" },
+    "negativeBarColor": { "type": "string", "default": "#dc2626" },
+    "showValues": { "type": "boolean", "default": true },
+    "initialExpandLevel": { "type": "integer", "default": 1 },
+    "maxVisibleNodes": { "type": "integer", "default": 500 },
+    "rootLabel": { "type": "string", "default": "Total" }
   },
   "methods": {
-    "expandAll": {
-      "description": "Expands all nodes."
-    },
-    "collapseAll": {
-      "description": "Collapses all nodes."
-    },
-    "setExpandedLevel": {
-      "description": "Expands nodes up to the requested zero-based level."
-    },
-    "setData": {
-      "description": "Sets data from script for local testing or advanced use."
-    }
+    "expandAll": { "description": "Expands all nodes." },
+    "collapseAll": { "description": "Collapses all nodes." },
+    "setExpandedLevel": { "description": "Expands nodes up to the requested zero-based level." },
+    "setData": { "description": "Sets data from script for local testing or advanced use." }
   },
   "events": {
-    "onNodeClick": {
-      "description": "Triggered when a node is clicked."
-    },
-    "onNodeExpand": {
-      "description": "Triggered when a node is expanded."
-    },
-    "onNodeCollapse": {
-      "description": "Triggered when a node is collapsed."
-    }
+    "onNodeClick": { "description": "Triggered when a node is clicked." },
+    "onNodeExpand": { "description": "Triggered when a node is expanded." },
+    "onNodeCollapse": { "description": "Triggered when a node is collapsed." }
   }
 }
