@@ -1,5 +1,5 @@
 (function () {
-  /* ---------- Defaults & sample data ---------- */
+  /* ---------- Defaults ---------- */
 
   const DEFAULT_SETTINGS = {
     nodeWidth: 250,
@@ -18,21 +18,6 @@
     othersLabel: "Others",
     sortDescending: true
   };
-
-  const SAMPLE_ROWS = [
-    { path: ["EMEA", "Germany"], value: 240 },
-    { path: ["EMEA", "Poland"], value: 130 },
-    { path: ["EMEA", "France"], value: 240 },
-    { path: ["EMEA", "Italy"], value: 80 },
-    { path: ["EMEA", "Spain"], value: 75 },
-    { path: ["EMEA", "Netherlands"], value: 60 },
-    { path: ["North America", "United States"], value: 360 },
-    { path: ["North America", "Canada"], value: 70 },
-    { path: ["North America", "Mexico"], value: 55 },
-    { path: ["APJ", "Japan"], value: 120 },
-    { path: ["APJ", "Australia"], value: 80 },
-    { path: ["APJ", "Singapore"], value: 45 }
-  ];
 
   /* ---------- Generic helpers ---------- */
 
@@ -245,10 +230,6 @@
     return [finalizeNode(root, settings)];
   }
 
-  function buildSampleTree(settings) {
-    return buildTreeFromPathRows(SAMPLE_ROWS, settings);
-  }
-
   function extractPathRowsFromSacBinding(binding) {
     if (!binding || !Array.isArray(binding.data) || !binding.metadata) {
       return [];
@@ -312,7 +293,7 @@
 
       this._settings = { ...DEFAULT_SETTINGS };
       this._lastPathRows = [];
-      this._tree = buildSampleTree(this._settings);
+      this._tree = [];
       this._expanded = new Set();
 
       this.setExpandedLevel(this._settings.initialExpandLevel, false);
@@ -345,7 +326,7 @@
       if (this._lastPathRows && this._lastPathRows.length) {
         this._tree = buildTreeFromPathRows(this._lastPathRows, this._settings);
       } else {
-        this._tree = buildSampleTree(this._settings);
+        this._tree = [];
       }
       this.setExpandedLevel(this._settings.initialExpandLevel, false);
     }
@@ -397,7 +378,7 @@
         this._tree = buildTreeFromParentRows(rows, this._settings);
       } else {
         this._lastPathRows = [];
-        this._tree = buildSampleTree(this._settings);
+        this._tree = [];
       }
       this.setExpandedLevel(this._settings.initialExpandLevel, false);
       this.render();
@@ -443,6 +424,14 @@
 
       const s = this._settings;
       const visible = computeVisibleNodes(this._tree, this._expanded);
+
+      // No data yet — render nothing. Avoids the dummy-data flash on
+      // initial load before SAC pushes the real binding via
+      // onCustomWidgetAfterUpdate.
+      if (!visible.length) {
+        this.shadowRoot.innerHTML = "";
+        return;
+      }
 
       if (visible.length > s.maxVisibleNodes) {
         this.shadowRoot.innerHTML =
