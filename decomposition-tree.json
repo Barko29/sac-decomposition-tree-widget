@@ -1,0 +1,48 @@
+{
+  "id": "com.company.sac.decompositiontree",
+  "version": "0.1.0",
+  "name": "Decomposition Tree",
+  "description": "Expandable left-to-right decomposition tree with actual bars, plan markers and threshold coloring.",
+  "newInstancePrefix": "DecompositionTree",
+  "icon": "https://YOUR_HOST/sac-widgets/decomposition-tree/0.1.0/icon.svg",
+  "webcomponents": [
+    {
+      "kind": "main",
+      "tag": "com-company-decomposition-tree",
+      "url": "https://YOUR_HOST/sac-widgets/decomposition-tree/0.1.0/decomposition-tree.js"
+    },
+    {
+      "kind": "builder",
+      "tag": "com-company-decomposition-tree-builder",
+      "url": "https://YOUR_HOST/sac-widgets/decomposition-tree/0.1.0/decomposition-tree-builder.js"
+    },
+    {
+      "kind": "styling",
+      "tag": "com-company-decomposition-tree-styling",
+      "url": "https://YOUR_HOST/sac-widgets/decomposition-tree/0.1.0/decomposition-tree-styling.js"
+    }
+  ],
+  "properties": {
+    "nodeWidth": { "type": "integer", "default": 250 },
+    "nodeHeight": { "type": "integer", "default": 58 },
+    "levelGap": { "type": "integer", "default": 90 },
+    "siblingGap": { "type": "integer", "default": 16 },
+    "thresholdAmber": { "type": "number", "default": 0.9 },
+    "thresholdGreen": { "type": "number", "default": 1.0 },
+    "showValues": { "type": "boolean", "default": true },
+    "initialExpandLevel": { "type": "integer", "default": 1 },
+    "maxVisibleNodes": { "type": "integer", "default": 500 },
+    "feedMap": { "type": "object", "default": {} }
+  },
+  "methods": {
+    "expandAll": { "description": "Expands all nodes." },
+    "collapseAll": { "description": "Collapses all nodes." },
+    "setExpandedLevel": { "description": "Expands nodes up to the requested zero-based level." },
+    "setData": { "description": "Sets data from script for local testing or advanced use." }
+  },
+  "events": {
+    "onNodeClick": { "description": "Triggered when a node is clicked." },
+    "onNodeExpand": { "description": "Triggered when a node is expanded." },
+    "onNodeCollapse": { "description": "Triggered when a node is collapsed." }
+  }
+}
