@@ -1,79 +1,6 @@
 (function () {
   const DEFAULT_SETTINGS = {
-    nodeWidth: 250,
-    nodeHeight: 58,
-    levelGap: 90,
-    siblingGap: 16,
-    barColor: "#2563eb",
-    negativeBarColor: "#dc2626",
-    othersBarColor: "#64748b",
-    showValues: true,
-    initialExpandLevel: 1,
-    maxVisibleNodes: 500,
-    rootLabel: "Total",
-    topN: 10,
-    enableOthers: true,
-    othersLabel: "Others",
-    sortDescending: true
-  };
-
-  const SAMPLE_ROWS = [
-    { path: ["EMEA", "Germany"], value: 240 },
-    { path: ["EMEA", "Poland"], value: 130 },
-    { path: ["EMEA", "France"], value: 240 },
-    { path: ["EMEA", "Italy"], value: 80 },
-    { path: ["EMEA", "Spain"], value: 75 },
-    { path: ["EMEA", "Netherlands"], value: 60 },
-    { path: ["North America", "United States"], value: 360 },
-    { path: ["North America", "Canada"], value: 70 },
-    { path: ["North America", "Mexico"], value: 55 },
-    { path: ["APJ", "Japan"], value: 120 },
-    { path: ["APJ", "Australia"], value: 80 },
-    { path: ["APJ", "Singapore"], value: 45 }
-  ];
-
-  function toNumber(value) {
-    if (value === undefined || value === null || value === "") {
-      return 0;
-    }
-
-    if (typeof value === "number") {
-      return Number.isFinite(value) ? value : 0;
-    }
-
-    const normalized = String(value)
-      .replace(/,/g, "")
-      .replace(/\s/g, "");
-
-    const n = Number(normalized);
-    return Number.isFinite(n) ? n : 0;
-  }
-
-  function readCellLabel(cell) {
-    if (cell === undefined || cell === null) {
-      return "";
-    }
-
-    if (typeof cell !== "object") {
-      return String(cell);
-    }
-
-    return String(
-      cell.label ??
-      cell.description ??
-      cell.formatted ??
-      cell.value ??
-      cell.id ??
-      ""
-    );
-  }
-
-  function readCellId(cell) {
-    if (cell === undefined || cell === null) {
-      return "";
-    }
-
-    if (typeof cell !== "object") {
+    nodeWidth: 250 "object") {    nodeWidth: 250,
       return String(cell);
     }
 
@@ -194,6 +121,7 @@
 
     pathRows.forEach(row => {
       const value = toNumber(row.value);
+
       const path = Array.isArray(row.path)
         ? row.path.filter(part => {
             return (
@@ -678,6 +606,7 @@
             <g
               class="dt-node ${node.isOthers ? "others-node" : ""}"
               data-node-id="${escapeXml(node.id)}"
+              data-has-children="${hasChildren ? "true" : "false"}"
               tabindex="0"
               role="button"
               aria-label="${escapeXml(displayLabel)}"
@@ -775,38 +704,70 @@
           </div>
         `;
 
-      this.shadowRoot
-        .querySelectorAll("[data-action='toggle']")
-        .forEach(el => {
-          el.addEventListener("click", event => {
+      const viewport = this.shadowRoot.querySelector(".viewport");
+
+      if (viewport) {
+        viewport.addEventListener("click", event => {
+          const toggleEl = event.target.closest("[data-action='toggle']");
+          const nodeEl = event.target.closest(".dt-node");
+
+          /*
+            Expand/collapse ONLY when the user clicks the + or - toggle.
+            Clicking the node card, label, bar, or value does NOT expand/collapse.
+          */
+          if (toggleEl) {
+            event.preventDefault();
             event.stopPropagation();
 
-            this.toggleNode(
-              el.getAttribute("data-node-id")
+            const nodeId = toggleEl.getAttribute("data-node-id");
+
+            if (nodeId) {
+              this.toggleNode(nodeId);
+            }
+
+            return;
+          }
+
+          /*
+            Normal node click event only.
+            No expand/collapse here.
+          */
+          if (nodeEl) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const nodeId = nodeEl.getAttribute("data-node-id");
+
+            this.dispatchEvent(
+              new CustomEvent("onNodeClick", {
+                detail: {
+                  nodeId
+                }
+              })
             );
-          });
+          }
         });
+      }
 
       this.shadowRoot
         .querySelectorAll(".dt-node")
         .forEach(el => {
-          el.addEventListener("click", () => {
-            this.dispatchEvent(
-              new CustomEvent("onNodeClick", {
-                detail: {
-                  nodeId: el.getAttribute("data-node-id")
-                }
-              })
-            );
-          });
-
           el.addEventListener("keydown", event => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
+              event.stopPropagation();
 
-              this.toggleNode(
-                el.getAttribute("data-node-id")
-              );
+              const nodeId = el.getAttribute("data-node-id");
+              const hasChildren =
+                el.getAttribute("data-has-children") === "true";
+
+              /*
+                Keyboard expand/collapse is kept for accessibility.
+                If you want mouse-only + / - behavior, remove this block.
+              */
+              if (hasChildren && nodeId) {
+                this.toggleNode(nodeId);
+              }
             }
           });
         });
@@ -854,6 +815,7 @@
             font-size: 12px;
             font-weight: 600;
             fill: #0f172a;
+            pointer-events: none;
           }
 
           .others-node .node-label {
@@ -863,25 +825,34 @@
           .value-label {
             font-size: 11px;
             fill: #475569;
+            pointer-events: none;
           }
 
           .bar-bg {
             fill: #e2e8f0;
+            pointer-events: none;
+          }
+
+          .bar-value {
+            pointer-events: none;
           }
 
           .connector {
             stroke: #cbd5e1;
             stroke-width: 1.3;
             fill: none;
+            pointer-events: none;
           }
 
           .toggle {
             cursor: pointer;
+            pointer-events: all;
           }
 
           .toggle circle {
             fill: #f8fafc;
             stroke: #94a3b8;
+            pointer-events: all;
           }
 
           .toggle text {
@@ -892,8 +863,13 @@
           }
 
           .dt-node {
-            cursor: pointer;
+            cursor: default;
             outline: none;
+            pointer-events: all;
+          }
+
+          .dt-node .toggle {
+            cursor: pointer;
           }
 
           .dt-node:focus .node-card {
@@ -910,3 +886,75 @@
     DecompositionTreeWidget
   );
 })();
+    nodeHeight: 58,
+    levelGap: 90,
+    siblingGap: 16,
+    barColor: "#2563eb",
+    negativeBarColor: "#dc2626",
+    othersBarColor: "#64748b",
+    showValues: true,
+    initialExpandLevel: 1,
+    maxVisibleNodes: 500,
+    rootLabel: "Total",
+    topN: 10,
+    enableOthers: true,
+    othersLabel: "Others",
+    sortDescending: true
+  };
+
+  const SAMPLE_ROWS = [
+    { path: ["EMEA", "Germany"], value: 240 },
+    { path: ["EMEA", "Poland"], value: 130 },
+    { path: ["EMEA", "France"], value: 240 },
+    { path: ["EMEA", "Italy"], value: 80 },
+    { path: ["EMEA", "Spain"], value: 75 },
+    { path: ["EMEA", "Netherlands"], value: 60 },
+    { path: ["North America", "United States"], value: 360 },
+    { path: ["North America", "Canada"], value: 70 },
+    { path: ["North America", "Mexico"], value: 55 },
+    { path: ["APJ", "Japan"], value: 120 },
+    { path: ["APJ", "Australia"], value: 80 },
+    { path: ["APJ", "Singapore"], value: 45 }
+  ];
+
+  function toNumber(value) {
+    if (value === undefined || value === null || value === "") {
+      return 0;
+    }
+
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    const normalized = String(value)
+      .replace(/,/g, "")
+      .replace(/\s/g, "");
+
+    const n = Number(normalized);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function readCellLabel(cell) {
+    if (cell === undefined || cell === null) {
+      return "";
+    }
+
+    if (typeof cell !== "object") {
+      return String(cell);
+    }
+
+    return String(
+      cell.label ??
+      cell.description ??
+      cell.formatted ??
+      cell.value ??
+      cell.id ??
+      ""
+    );
+  }
+
+  function readCellId(cell) {
+    if (cell === undefined || cell === null) {
+      return "";
+    }
+
