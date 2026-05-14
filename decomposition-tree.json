@@ -37,8 +37,7 @@
     "thresholdGreen": { "type": "number", "default": 1.0 },
     "showValues": { "type": "boolean", "default": true },
     "initialExpandLevel": { "type": "integer", "default": 1 },
-    "maxVisibleNodes": { "type": "integer", "default": 500 },
-    "feedMap": { "type": "object", "default": {} }
+    "maxVisibleNodes": { "type": "integer", "default": 500 }
   },
   "methods": {
     "expandAll": { "description": "Expands all nodes." },
