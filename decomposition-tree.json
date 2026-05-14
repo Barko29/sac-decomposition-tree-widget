@@ -4,22 +4,22 @@
   "name": "Decomposition Tree",
   "description": "Expandable left-to-right decomposition tree with actual bars, plan markers and threshold coloring.",
   "newInstancePrefix": "DecompositionTree",
-  "icon": "https://YOUR_HOST/sac-widgets/decomposition-tree/0.1.0/icon.svg",
+  "icon": "https://barko29.github.io/sac-decomposition-tree-widget/icon.svg",
   "webcomponents": [
     {
       "kind": "main",
       "tag": "com-company-decomposition-tree",
-      "url": "https://YOUR_HOST/sac-widgets/decomposition-tree/0.1.0/decomposition-tree.js"
+      "url": "https://barko29.github.io/sac-decomposition-tree-widget/decomposition-tree.js"
     },
     {
       "kind": "builder",
       "tag": "com-company-decomposition-tree-builder",
-      "url": "https://YOUR_HOST/sac-widgets/decomposition-tree/0.1.0/decomposition-tree-builder.js"
+      "url": "https://barko29.github.io/sac-decomposition-tree-widget/decomposition-tree-builder.js"
     },
     {
       "kind": "styling",
       "tag": "com-company-decomposition-tree-styling",
-      "url": "https://YOUR_HOST/sac-widgets/decomposition-tree/0.1.0/decomposition-tree-styling.js"
+      "url": "https://barko29.github.io/sac-decomposition-tree-widget/decomposition-tree-styling.js"
     }
   ],
   "properties": {
