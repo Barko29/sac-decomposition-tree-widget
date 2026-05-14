@@ -1,6 +1,6 @@
 {
   "id": "com.company.sac.decompositiontree",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "name": "Decomposition Tree",
   "description": "Expandable left-to-right decomposition tree with a synthetic Total root, SAC dimensions as hierarchy levels, one measure as bar value, and Top-N plus Others rollup.",
   "newInstancePrefix": "DecompositionTree",
@@ -42,9 +42,29 @@
     "nodeHeight": { "type": "integer", "default": 58 },
     "levelGap": { "type": "integer", "default": 90 },
     "siblingGap": { "type": "integer", "default": 16 },
+
     "barColor": { "type": "string", "default": "#2563eb" },
     "negativeBarColor": { "type": "string", "default": "#dc2626" },
     "othersBarColor": { "type": "string", "default": "#64748b" },
+    "barBackgroundColor": { "type": "string", "default": "#e2e8f0" },
+
+    "backgroundColor": { "type": "string", "default": "#f8fafc" },
+
+    "nodeBackgroundColor": { "type": "string", "default": "#ffffff" },
+    "nodeBorderColor": { "type": "string", "default": "#e2e8f0" },
+    "nodeShadowColor": { "type": "string", "default": "#0f172a" },
+    "focusBorderColor": { "type": "string", "default": "#2563eb" },
+
+    "labelColor": { "type": "string", "default": "#0f172a" },
+    "valueLabelColor": { "type": "string", "default": "#475569" },
+    "othersLabelColor": { "type": "string", "default": "#475569" },
+
+    "connectorColor": { "type": "string", "default": "#cbd5e1" },
+
+    "toggleBackgroundColor": { "type": "string", "default": "#f8fafc" },
+    "toggleBorderColor": { "type": "string", "default": "#94a3b8" },
+    "toggleTextColor": { "type": "string", "default": "#334155" },
+
     "showValues": { "type": "boolean", "default": true },
     "initialExpandLevel": { "type": "integer", "default": 1 },
     "maxVisibleNodes": { "type": "integer", "default": 500 },
