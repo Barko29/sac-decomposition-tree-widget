@@ -16,7 +16,22 @@
     topN: 10,
     enableOthers: true,
     othersLabel: "Others",
-    sortDescending: true
+    sortDescending: true,
+
+    // Cosmetic colors
+    backgroundColor: "#f8fafc",
+    nodeBackgroundColor: "#ffffff",
+    nodeBorderColor: "#e2e8f0",
+    nodeShadowColor: "#0f172a",
+    focusBorderColor: "#2563eb",
+    labelColor: "#0f172a",
+    valueLabelColor: "#475569",
+    othersLabelColor: "#475569",
+    barBackgroundColor: "#e2e8f0",
+    connectorColor: "#cbd5e1",
+    toggleBackgroundColor: "#f8fafc",
+    toggleBorderColor: "#94a3b8",
+    toggleTextColor: "#334155"
   };
 
   /* ---------- Generic helpers ---------- */
@@ -85,6 +100,27 @@
     return new Intl.NumberFormat(undefined, {
       maximumFractionDigits: 1
     }).format(value || 0);
+  }
+
+  function hexToRgba(hex, alpha) {
+    if (typeof hex !== "string") return `rgba(0, 0, 0, ${alpha})`;
+    const s = hex.trim().replace(/^#/, "");
+    let r, g, b;
+    if (s.length === 3) {
+      r = parseInt(s[0] + s[0], 16);
+      g = parseInt(s[1] + s[1], 16);
+      b = parseInt(s[2] + s[2], 16);
+    } else if (s.length === 6) {
+      r = parseInt(s.slice(0, 2), 16);
+      g = parseInt(s.slice(2, 4), 16);
+      b = parseInt(s.slice(4, 6), 16);
+    } else {
+      return hex;
+    }
+    if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) {
+      return `rgba(0, 0, 0, ${alpha})`;
+    }
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
   /* ---------- Tree building ---------- */
@@ -631,6 +667,8 @@
     }
 
     styles() {
+      const s = this._settings;
+      const shadowRgba = hexToRgba(s.nodeShadowColor, 0.18);
       return `
         <style>
           :host {
@@ -638,64 +676,64 @@
             width: 100%;
             height: 100%;
             min-height: 240px;
-            color: #0f172a;
+            color: ${s.labelColor};
             font-family: Arial, sans-serif;
           }
           .viewport {
             width: 100%;
             height: 100%;
             overflow: auto;
-            background: #f8fafc;
+            background: ${s.backgroundColor};
             border-radius: 8px;
           }
           .state {
             padding: 16px;
-            color: #475569;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            color: ${s.valueLabelColor};
+            background: ${s.backgroundColor};
+            border: 1px solid ${s.nodeBorderColor};
             border-radius: 8px;
           }
           .node-card {
-            fill: #ffffff;
-            stroke: #e2e8f0;
-            filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.08));
+            fill: ${s.nodeBackgroundColor};
+            stroke: ${s.nodeBorderColor};
+            filter: drop-shadow(0 1px 2px ${shadowRgba});
           }
           .others-node .node-card { stroke-dasharray: 4 3; }
           .node-label {
             font-size: 12px;
             font-weight: 600;
-            fill: #0f172a;
+            fill: ${s.labelColor};
             pointer-events: none;
           }
-          .others-node .node-label { fill: #475569; }
+          .others-node .node-label { fill: ${s.othersLabelColor}; }
           .value-label {
             font-size: 11px;
-            fill: #475569;
+            fill: ${s.valueLabelColor};
             pointer-events: none;
           }
-          .bar-bg { fill: #e2e8f0; pointer-events: none; }
+          .bar-bg { fill: ${s.barBackgroundColor}; pointer-events: none; }
           .bar-value { pointer-events: none; }
           .connector {
-            stroke: #cbd5e1;
+            stroke: ${s.connectorColor};
             stroke-width: 1.3;
             fill: none;
             pointer-events: none;
           }
           .toggle { cursor: pointer; pointer-events: all; }
           .toggle circle {
-            fill: #f8fafc;
-            stroke: #94a3b8;
+            fill: ${s.toggleBackgroundColor};
+            stroke: ${s.toggleBorderColor};
             pointer-events: all;
           }
           .toggle text {
             font-size: 13px;
-            fill: #334155;
+            fill: ${s.toggleTextColor};
             pointer-events: none;
             user-select: none;
           }
           .dt-node { cursor: default; outline: none; pointer-events: all; }
           .dt-node .toggle { cursor: pointer; }
-          .dt-node:focus .node-card { stroke: #2563eb; stroke-width: 2; }
+          .dt-node:focus .node-card { stroke: ${s.focusBorderColor}; stroke-width: 2; }
         </style>
       `;
     }
@@ -708,27 +746,50 @@
 
   const STYLING_FIELDS = [
     { section: "Layout" },
-    { prop: "nodeWidth",          label: "Node width (px)",          type: "number",  min: 80,  max: 600 },
-    { prop: "nodeHeight",         label: "Node height (px)",         type: "number",  min: 30,  max: 200 },
-    { prop: "levelGap",           label: "Gap between levels (px)",  type: "number",  min: 0,   max: 400 },
-    { prop: "siblingGap",         label: "Gap between siblings (px)",type: "number",  min: 0,   max: 200 },
+    { prop: "nodeWidth",             label: "Node width (px)",          type: "number",  min: 80,  max: 600 },
+    { prop: "nodeHeight",            label: "Node height (px)",         type: "number",  min: 30,  max: 200 },
+    { prop: "levelGap",              label: "Gap between levels (px)",  type: "number",  min: 0,   max: 400 },
+    { prop: "siblingGap",            label: "Gap between siblings (px)",type: "number",  min: 0,   max: 200 },
 
-    { section: "Colors" },
-    { prop: "barColor",           label: "Bar color",                type: "color"  },
-    { prop: "negativeBarColor",   label: "Negative bar color",       type: "color"  },
-    { prop: "othersBarColor",     label: "Others bar color",         type: "color"  },
+    { section: "Bars" },
+    { prop: "barColor",              label: "Bar color (positive)",     type: "color"  },
+    { prop: "negativeBarColor",      label: "Bar color (negative)",     type: "color"  },
+    { prop: "othersBarColor",        label: "Bar color (Others)",       type: "color"  },
+    { prop: "barBackgroundColor",    label: "Bar track (empty) color",  type: "color"  },
+
+    { section: "Background" },
+    { prop: "backgroundColor",       label: "Widget background",        type: "color"  },
+
+    { section: "Node card" },
+    { prop: "nodeBackgroundColor",   label: "Card fill",                type: "color"  },
+    { prop: "nodeBorderColor",       label: "Card border",              type: "color"  },
+    { prop: "nodeShadowColor",       label: "Card shadow",              type: "color"  },
+    { prop: "focusBorderColor",      label: "Card border when focused", type: "color"  },
+
+    { section: "Labels" },
+    { prop: "labelColor",            label: "Node label color",         type: "color"  },
+    { prop: "valueLabelColor",       label: "Value label color",        type: "color"  },
+    { prop: "othersLabelColor",      label: "Others label color",       type: "color"  },
+
+    { section: "Connectors" },
+    { prop: "connectorColor",        label: "Connector line color",     type: "color"  },
+
+    { section: "Toggle button (+/−)" },
+    { prop: "toggleBackgroundColor", label: "Toggle fill",              type: "color"  },
+    { prop: "toggleBorderColor",     label: "Toggle border",            type: "color"  },
+    { prop: "toggleTextColor",       label: "Toggle text",              type: "color"  },
 
     { section: "Display" },
-    { prop: "showValues",         label: "Show value labels",        type: "boolean" },
-    { prop: "rootLabel",          label: "Root label",               type: "text"    },
-    { prop: "initialExpandLevel", label: "Initial expand level",     type: "number", min: 0, max: 20 },
-    { prop: "maxVisibleNodes",    label: "Max visible nodes",        type: "number", min: 10, max: 5000 },
+    { prop: "showValues",            label: "Show value labels",        type: "boolean" },
+    { prop: "rootLabel",             label: "Root label",               type: "text"    },
+    { prop: "initialExpandLevel",    label: "Initial expand level",     type: "number", min: 0, max: 20 },
+    { prop: "maxVisibleNodes",       label: "Max visible nodes",        type: "number", min: 10, max: 5000 },
 
     { section: "Top-N / Others" },
-    { prop: "topN",               label: "Top N per parent",         type: "number", min: 0, max: 100 },
-    { prop: "enableOthers",       label: "Roll up rest into Others", type: "boolean" },
-    { prop: "othersLabel",        label: "Others label",             type: "text"    },
-    { prop: "sortDescending",     label: "Sort descending by value", type: "boolean" }
+    { prop: "topN",                  label: "Top N per parent",         type: "number", min: 0, max: 100 },
+    { prop: "enableOthers",          label: "Roll up rest into Others", type: "boolean" },
+    { prop: "othersLabel",           label: "Others label",             type: "text"    },
+    { prop: "sortDescending",        label: "Sort descending by value", type: "boolean" }
   ];
 
   class DecompositionTreeStyling extends HTMLElement {
